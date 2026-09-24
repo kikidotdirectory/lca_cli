@@ -14,7 +14,7 @@
 	],
 	"scripts": {
 		"build": "tsc && chmod +x bin/index.js",
-		"dev": "tsx src/index.ts",
+		"dev": "pnpm build && tsc --watch --preserveWatchOutput",
 		"prepare": "pnpm build",
 		"link:global": "pnpm build && pnpm add -g link:$PWD",
 		"unlink:global": "pnpm remove -g lca_cli",
