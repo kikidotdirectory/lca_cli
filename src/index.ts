@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { authenticateClient } from "./google-auth.js";
 
 const program = new Command();
 
@@ -9,11 +10,7 @@ program
 	.version("1.0.0");
 
 program
-	.command("hello")
-	.description("Print a greeting")
-	.argument("[name]", "who to greet", "world")
-	.action((name: string) => {
-		console.log(`hello, ${name}`);
-	});
+	.command("login")
+	.action(authenticateClient);
 
 program.parse();

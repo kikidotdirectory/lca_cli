@@ -21,10 +21,15 @@
 		"relink": "(pnpm unlink:global || true) && pnpm link:global"
 	},
 	"dependencies": {
-		"commander": "^15.0.0"
+		"@googleapis/sheets": "^18.0.0",
+		"commander": "^15.0.0",
+		"google-auth-library": "^11.1.0",
+		"open": "^11.0.4",
+		"server-destroy": "^1.0.1"
 	},
 	"devDependencies": {
 		"@types/node": "^26.6.2",
+		"@types/server-destroy": "^1.0.4",
 		"dprint": "^0.57.4",
 		"tsx": "^4.23.15",
 		"typescript": "^7.0.2"
