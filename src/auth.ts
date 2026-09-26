@@ -154,16 +154,9 @@ export async function createSheetsGateway(spreadsheetId: string) {
 	const sheetsClient = sheets({ version: "v4", auth });
 
 	return {
-		sheetIdList: async () => {
+		sheetsList: async () => {
 			const result = await sheetsClient.spreadsheets.get({ spreadsheetId }).catch(translate);
-			const sheetsList = result.data.sheets ?? [];
-			const sheetIdList: Record<string, number> = {};
-			for (const { properties } of sheetsList) {
-				if (properties?.title != null && properties.sheetId != null) {
-					sheetIdList[properties.title] = properties.sheetId;
-				}
-			}
-			return sheetIdList;
+			return result.data.sheets ?? [];
 		},
 	};
 }

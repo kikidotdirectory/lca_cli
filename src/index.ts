@@ -27,7 +27,7 @@ program
 	.action(async () => {
 		const id = getSpreadsheetId();
 		const gateway = await createSheetsGateway(id);
-		await selectSheets(await gateway.sheetIdList());
+		await selectSheets(await gateway.sheetsList());
 	});
 
 program

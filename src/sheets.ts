@@ -1,4 +1,4 @@
-import { sheets } from "@googleapis/sheets";
+import { sheets, type sheets_v4 } from "@googleapis/sheets";
 import { checkbox } from "@inquirer/prompts";
 import fs from "node:fs";
 
@@ -8,7 +8,15 @@ import { selectedSheetsPath, spreadsheetId } from "./config.js";
 import type { SelectedSheet } from "./lca-types.js";
 import { buildSheetRanges } from "./sheet-ranges.js";
 
-export async function selectSheets(sheetIdList: Record<string, number>) {
+export async function selectSheets(sheetsList: sheets_v4.Schema$Sheet[]) {
+	// build sheetslist into `name: id` pairs
+	const sheetIdList: Record<string, number> = {};
+	for (const { properties } of sheetsList) {
+		if (properties?.title != null && properties.sheetId != null) {
+			sheetIdList[properties.title] = properties.sheetId;
+		}
+	}
+
 	// Get the values from the spreadsheet.
 	let selectedSheets: SelectedSheet[];
 	try {
