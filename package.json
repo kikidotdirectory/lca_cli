@@ -30,6 +30,7 @@
 		"server-destroy": "^1.0.1"
 	},
 	"devDependencies": {
+		"@commander-js/extra-typings": "^15.0.0",
 		"@types/node": "^26.6.2",
 		"@types/server-destroy": "^1.0.4",
 		"dprint": "^0.57.4",

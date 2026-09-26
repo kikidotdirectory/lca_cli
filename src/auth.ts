@@ -1,3 +1,4 @@
+import { sheets } from "@googleapis/sheets";
 import { OAuth2Client } from "google-auth-library";
 import fs from "node:fs";
 import { createServer } from "node:http";
@@ -5,6 +6,10 @@ import path from "node:path";
 import open from "open";
 import enableDestroy from "server-destroy";
 import { cache_dir } from "./config.js";
+
+export class NotLoggedInError extends Error {}
+export class SpreadsheetNotFoundError extends Error {}
+export class NoAccessError extends Error {}
 
 const credentials_path = path.join(process.cwd(), "credentials.json");
 const token_path = path.join(cache_dir, "token.json");
@@ -134,7 +139,36 @@ export async function getAuthenticatedClient(): Promise<OAuth2Client> {
 	return (await restoreSavedClient()) ?? authenticate(scopes);
 }
 
-export async function authenticateClient(): Promise<void> {
+function translate(error: unknown): never {
+	const status = (error as { status?: number }).status;
+	if (status === 401) throw new NotLoggedInError("Session expired, run `lca login`", { cause: error });
+	if (status === 403) throw new NoAccessError("No access to this spreadsheet.", { cause: error });
+	if (status === 404) throw new SpreadsheetNotFoundError("Spreadsheet not found.", { cause: error });
+	throw error; // unknown: pass through unchanged
+}
+
+export async function createSheetsGateway(spreadsheetId: string) {
+	const auth = await getAuthenticatedClient().catch((e) => {
+		throw new NotLoggedInError("Not logged in.", { cause: e });
+	});
+	const sheetsClient = sheets({ version: "v4", auth });
+
+	return {
+		sheetIdList: async () => {
+			const result = await sheetsClient.spreadsheets.get({ spreadsheetId }).catch(translate);
+			const sheetsList = result.data.sheets ?? [];
+			const sheetIdList: Record<string, number> = {};
+			for (const { properties } of sheetsList) {
+				if (properties?.title != null && properties.sheetId != null) {
+					sheetIdList[properties.title] = properties.sheetId;
+				}
+			}
+			return sheetIdList;
+		},
+	};
+}
+
+export async function login(): Promise<void> {
 	if (await restoreSavedClient()) {
 		console.log("You are already logged in.");
 		return;

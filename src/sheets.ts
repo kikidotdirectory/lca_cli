@@ -8,27 +8,9 @@ import { selectedSheetsPath, spreadsheetId } from "./config.js";
 import type { SelectedSheet } from "./lca-types.js";
 import { buildSheetRanges } from "./sheet-ranges.js";
 
-export async function selectSheets() {
-	// Create a new Sheets API client.
-	const sheetsClient = sheets({
-		version: "v4",
-		auth: await getAuthenticatedClient(),
-	});
-
-	if (!spreadsheetId) {
-		console.log("Please set SPREADSHEET_ID in .env");
-		return;
-	}
-
+export async function selectSheets(sheetIdList: Record<string, number>) {
 	// Get the values from the spreadsheet.
-	const result = await sheetsClient.spreadsheets.get({ spreadsheetId });
-	const sheetsList = result.data.sheets ?? [];
-	const sheetIdList = Object.fromEntries(
-		sheetsList.map((sheet) => [sheet.properties?.title, sheet.properties?.sheetId]),
-	);
-	console.log(sheetIdList);
-
-	let selectedSheets;
+	let selectedSheets: SelectedSheet[];
 	try {
 		selectedSheets = await checkbox(
 			{
