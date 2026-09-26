@@ -4,20 +4,23 @@ import { createServer } from "node:http";
 import path from "node:path";
 import open from "open";
 import enableDestroy from "server-destroy";
+import { cache_dir } from "./config.js";
 
 const credentials_path = path.join(process.cwd(), "credentials.json");
-const token_path = path.join(process.cwd(), "token.json");
+const token_path = path.join(cache_dir, "token.json");
 
 async function getClient() {
+	let data: string;
 	try {
-		const data = await fs.promises.readFile(credentials_path, "utf8");
-		const parsed = JSON.parse(data);
-		const { client_id, client_secret } = parsed.installed;
-		return { client_id, client_secret };
+		data = await fs.promises.readFile(credentials_path, "utf8");
 	} catch (err) {
-		console.error(err);
-		return { client_id: undefined, client_secret: undefined };
+		if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+			throw new Error(`Missing Google OAuth credentials at ${credentials_path}`);
+		}
+		throw err;
 	}
+	const { client_id, client_secret } = JSON.parse(data).installed;
+	return { client_id, client_secret };
 }
 
 const scopes = ["https://www.googleapis.com/auth/spreadsheets"];

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { authenticateClient } from "./google-auth.js";
+import { authenticateClient } from "./auth.js";
 
 const program = new Command();
 

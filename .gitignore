@@ -1,8 +1,7 @@
 .DS_Store
 node_modules
+cache
 .env
 bin
 
-# secrets
 credentials.json
-token.json
