@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { authenticateClient } from "./auth.js";
+import { readSheets, sheetName } from "./sheets.js";
 
 const program = new Command();
 
@@ -12,5 +13,13 @@ program
 program
 	.command("login")
 	.action(authenticateClient);
+
+program
+	.command("sheetselect")
+	.action(sheetName);
+
+program
+	.command("buildsheets")
+	.action(readSheets);
 
 program.parse();
