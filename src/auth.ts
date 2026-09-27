@@ -147,6 +147,8 @@ function translate(error: unknown): never {
 	throw error; // unknown: pass through unchanged
 }
 
+export type SheetsGateway = Awaited<ReturnType<typeof createSheetsGateway>>;
+
 export async function createSheetsGateway(spreadsheetId: string) {
 	const auth = await getAuthenticatedClient().catch((e) => {
 		throw new NotLoggedInError("Not logged in.", { cause: e });
@@ -157,6 +159,13 @@ export async function createSheetsGateway(spreadsheetId: string) {
 		sheetsList: async () => {
 			const result = await sheetsClient.spreadsheets.get({ spreadsheetId }).catch(translate);
 			return result.data.sheets ?? [];
+		},
+		sheetValues: async (sheetName: string, range = "") => {
+			const result = await sheetsClient.spreadsheets.values.get({
+				spreadsheetId,
+				range: `'${sheetName.replaceAll("'", "''")}'${range}`,
+			}).catch(translate);
+			return result.data.values ?? [];
 		},
 	};
 }

@@ -8,10 +8,12 @@ function toColumn(index: number) {
 	return column;
 }
 
+export class HeaderNotFoundError extends Error {}
+
 // find the header row (the one with both "SKU" and "Status") and return the
 // table bounds in A1 notation. rightEdge is a bare column so the range stays
 // open-ended downward, e.g. "B9:AX" covers every row from 9 to the end.
-export function buildSheetRanges(values: string[][]) {
+export function buildSheetRanges(sheetName: string, values: string[][]) {
 	const searchLimit = 50; // arbitrary limit to search
 
 	for (const [i, row] of values.slice(0, searchLimit).entries()) {
@@ -29,10 +31,13 @@ export function buildSheetRanges(values: string[][]) {
 
 		// JS xor (https://www.howtocreate.co.uk/xor.html)
 		if (hasSKU ? !hasStatus : hasStatus) {
-			console.warn(`row ${i + 1} has only one of "SKU"/"Status", skipping.`);
+			throw new HeaderNotFoundError(
+				`row ${i + 1} has only one of "SKU"/"Status"i`,
+			);
 		}
 	}
 
-	console.log(`could not find header row in ${searchLimit} rows.`);
-	return undefined;
+	throw new HeaderNotFoundError(
+		`Could not find a header row with "SKU" and "Status" in the first ${searchLimit} rows of "${sheetName}".`,
+	);
 }

@@ -3,7 +3,8 @@ import "dotenv/config";
 import { Command } from "commander";
 import { createSheetsGateway, login } from "./auth.js";
 import { NoAccessError, NotLoggedInError, SpreadsheetNotFoundError } from "./auth.js";
-import { readSheets, selectSheets } from "./sheets.js";
+import { HeaderNotFoundError } from "./sheet-ranges.js";
+import { NoSheetsSelectedError, readSheets, selectSheets } from "./sheets.js";
 
 const program: Command = new Command();
 
@@ -32,7 +33,10 @@ program
 
 program
 	.command("buildsheets")
-	.action(readSheets);
+	.action(async () => {
+		const gateway = await createSheetsGateway(getSpreadsheetId());
+		await readSheets(gateway);
+	});
 
 try {
 	await program.parseAsync();
@@ -42,6 +46,12 @@ try {
 	}
 	if (error instanceof NoAccessError || error instanceof SpreadsheetNotFoundError) {
 		program.error(`${error.message} Check SPREADSHEET_ID in .env.`);
+	}
+	if (error instanceof NoSheetsSelectedError) {
+		program.error(`${error.message} Run \`lca sheetselect\`.`);
+	}
+	if (error instanceof HeaderNotFoundError) {
+		program.error(error.message);
 	}
 	throw error; // unexpected: show the full stack
 }

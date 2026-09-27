@@ -1,10 +1,10 @@
-import { sheets, type sheets_v4 } from "@googleapis/sheets";
+import { type sheets_v4 } from "@googleapis/sheets";
 import { checkbox } from "@inquirer/prompts";
 import fs from "node:fs";
 
-import { getAuthenticatedClient } from "./auth.js";
+import { type SheetsGateway } from "./auth.js";
 
-import { selectedSheetsPath, spreadsheetId } from "./config.js";
+import { selectedSheetsPath } from "./config.js";
 import type { SelectedSheet } from "./lca-types.js";
 import { buildSheetRanges } from "./sheet-ranges.js";
 
@@ -46,23 +46,24 @@ export async function selectSheets(sheetsList: sheets_v4.Schema$Sheet[]) {
 	}
 }
 
-export async function readSheets() {
-	if (!spreadsheetId) {
-		console.log("Please set SPREADSHEET_ID in .env");
-		return;
+export class NoSheetsSelectedError extends Error {}
+
+export async function readSheets(gateway: Pick<SheetsGateway, "sheetValues">) {
+	let raw: string;
+	try {
+		raw = await fs.promises.readFile(selectedSheetsPath, "utf8");
+	} catch (error) {
+		// ENOENT = `lca sheetselect` has never been run
+		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+			throw new NoSheetsSelectedError("No sheets selected.");
+		}
+		throw error;
 	}
 
-	const raw = await fs.promises.readFile(selectedSheetsPath, "utf8");
 	const selected: SelectedSheet[] = JSON.parse(raw);
 	if (selected.length === 0) {
-		console.error("No sheets selected, please select at least one with `lca sheetselect`");
-		return;
+		throw new NoSheetsSelectedError("No sheets selected.");
 	}
-
-	const sheetsClient = sheets({
-		version: "v4",
-		auth: await getAuthenticatedClient(),
-	});
 
 	let foundRanges = false;
 
@@ -73,15 +74,10 @@ export async function readSheets() {
 		const { topLeft, rightEdge } = sheet;
 		const range = !topLeft || !rightEdge ? "" : `!${topLeft}:${rightEdge}`;
 
-		const result = await sheetsClient.spreadsheets.values.get({
-			spreadsheetId,
-			// A1 notation needs titles with spaces/symbols quoted; embedded ' is doubled
-			range: `'${sheet.name.replaceAll("'", "''")}'${range}`,
-		});
+		const values = await gateway.sheetValues(sheet.name, range);
 
 		if (range === "") {
-			const bounds = buildSheetRanges(result.data.values ?? []);
-			if (!bounds) continue;
+			const bounds = buildSheetRanges(sheet.name, values);
 			sheet.topLeft = bounds.topLeft;
 			sheet.rightEdge = bounds.rightEdge;
 			foundRanges = true;
